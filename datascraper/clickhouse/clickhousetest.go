@@ -12,13 +12,15 @@ func init_tables(conn *clickhouse.Conn) {
 	log.Info(symbols)
 	for _, pair := range symbols {
 
-		qdb := clickhouse.NewQuery(fmt.Sprintf("CREATE TABLE binance_trades.%s(eventtype String,eventtime Int64,symbol String,tradeID Int64,price String,quantity String,buyerOrderID Int64,sellerOrderID Int64,tradeTime Int64,isBuyerMaker Bool,placeholder Bool,time String) ENGINE = MergeTree() PRIMARY KEY (symbol, eventtime)", pair))
-		qdbbuffer := clickhouse.NewQuery(fmt.Sprintf("CREATE TABLE binance_trades.%sbuffer(eventtype String,eventtime Int64,symbol String,tradeID Int64,price String,quantity String,buyerOrderID Int64,sellerOrderID Int64,tradeTime Int64,isBuyerMaker Bool,placeholder Bool,time String) ENGINE = Buffer('binance_trades','%s',16, 5, 30, 1000, 10000, 1000000, 10000000)", pair))
-		err := qdb.Exec(conn)
+		qdbtrades := clickhouse.NewQuery(fmt.Sprintf("CREATE TABLE binance_trades.%s(eventtype String,eventtime Int64,symbol String,tradeID Int64,price String,quantity String,buyerOrderID Int64,sellerOrderID Int64,tradeTime Int64,isBuyerMaker Bool,placeholder Bool,time String) ENGINE = MergeTree() PRIMARY KEY (symbol, eventtime)", pair))
+		qdbtradesbuffer := clickhouse.NewQuery(fmt.Sprintf("CREATE TABLE binance_trades.%sbuffer(eventtype String,eventtime Int64,symbol String,tradeID Int64,price String,quantity String,buyerOrderID Int64,sellerOrderID Int64,tradeTime Int64,isBuyerMaker Bool,placeholder Bool,time String) ENGINE = Buffer('binance_trades','%s',16, 5, 30, 1000, 10000, 1000000, 10000000)", pair))
+		qdbklinesclosed := clickhouse.NewQuery(fmt.Sprintf("CREATE TABLE binance_klines.%s_closed(eventtype String,eventtime Int64,symbol String,tradeID Int64,price String,quantity String,buyerOrderID Int64,sellerOrderID Int64,tradeTime Int64,isBuyerMaker Bool,placeholder Bool,time String) ENGINE = MergeTree() PRIMARY KEY (symbol, eventtime)", pair))
+		qdbklinesclosedbuffer := clickhouse.NewQuery(fmt.Sprintf("CREATE TABLE binance_klines.%s_closed(eventtype String,eventtime Int64,symbol String,tradeID Int64,price String,quantity String,buyerOrderID Int64,sellerOrderID Int64,tradeTime Int64,isBuyerMaker Bool,placeholder Bool,time String) ENGINE = MergeTree() PRIMARY KEY (symbol, eventtime)", pair))
+		err := qdbtrades.Exec(conn)
 		if err != nil {
 			log.Error(err)
 		}
-		err = qdbbuffer.Exec(conn)
+		err = qdbtradesbuffer.Exec(conn)
 		if err != nil {
 			log.Error(err)
 		}

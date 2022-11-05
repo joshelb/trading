@@ -46,3 +46,41 @@ func Tradeevents(conn *clickhouse.Conn) {
 	<-doneC
 
 }
+
+func Klineevents(conn *clickhouse.Conn) {
+	wsCombinedKlineHandler := func(kline *binance.WsKlineEvent) {
+		kline := kline.Kline
+		isFinal := 1
+		if kline.IsFinal {
+			isFinal := 1
+			query := clickhouse.NewQuery(fmt.Sprintf("INSERT INTO binance_klines.%s_closed VALUES (%d,%d,%s,%s,%d,%d,%s,%s,%s,%s,%s,%d,%d,%s,%s,%s)", kline.StartTime, kline.EndTime, kline.Symbol, kline.Interval, kline.FirstTradeID, kline.LastTradeID, kline.Open, kline.Close, kline.High, kline.Low, kline.Volume, kline.TradeNum, IsFinal, kline.QuoteVolume, kline.ActiveBuyVolume, kline.ActiveQuoteVolume))
+			err := query.Exec(conn)
+			if err != nil {
+				log.Info(err)
+			}
+		}
+		if kline.isFinal == true {
+			isFinal = 1
+		} else {
+			isFinal = 0
+		}
+		query := clickhouse.NewQuery(fmt.Sprintf("INSERT INTO binance_klines.%s_all (%d,%d,%s,%s,%d,%d,%s    ,%s,%s,%s,%s,%d,%d,%s,%s,%s)", kline.StartTime, kline.EndTime, kline.Symbol, kline.Interval, kline.FirstTradeID, kline.LastTradeID, kline.Open, kline.Close, kline.High, kline.Low, kline.Volume, kline.TradeNum, IsFinal, kline.QuoteVolume, kline.ActiveBuyVolume, kline.ActiveQuoteVolume))
+		err := query.Exec(conn)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+
+	errHandler := func(err error) {
+		log.Error(err)
+	}
+
+	doneC, _, err := binance.WsCombinedKlineServe([]string{"BTCUSDT", "ETHUSDT", "DOGEUSDT"}, wsCombinedKlineHandler, errHandler)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	<-doneC
+
+}
